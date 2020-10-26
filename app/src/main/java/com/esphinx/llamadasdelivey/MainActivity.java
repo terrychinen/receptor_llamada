@@ -40,6 +40,11 @@ public class MainActivity extends AppCompatActivity {
     private Button btnLogOut;
     private SharedPreferences preferences;
     private Intent intent;
+    String myPhone = "";
+    String ruc = "";
+
+    int callCheck = 0;
+    int checkService = 0;
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
@@ -48,19 +53,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         preferences = getSharedPreferences("login", MODE_PRIVATE);
+         myPhone = preferences.getString("phone", "phone doesn't exist");
+         ruc = preferences.getString("ruc", "phone doesn't exist");
 
+        intent = new Intent(this, SegundoPlano.class);
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy ");
-            LocalDateTime now = null;
-            now = LocalDateTime.now();
-            Toast.makeText(MainActivity.this, "Fecha: " +dtf.format(now), Toast.LENGTH_LONG).show();
-            System.out.println(dtf.format(now));
-
-        }
 
         txtSalida = findViewById(R.id.salida);
         btnLogOut = findViewById(R.id.btn_log_out);
+
+
 
         btnLogOut.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -69,26 +71,57 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        verifyPermissions();
+    }
 
-        /*TelephonyManager telephony = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
+
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(checkService == 1){
+            stopService(intent);
+            checkService = 0;
+        }
+
+        startService(new Intent(intent));
+
+     /*   TelephonyManager telephony = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
         telephony.listen(new PhoneStateListener() {
             @Override
             public void onCallStateChanged(int state, String phoneNumber) {
                 if (TelephonyManager.CALL_STATE_RINGING == state) {
-                    SharedPreferences preferences = getSharedPreferences("login", MODE_PRIVATE);
-                    String myPhone = preferences.getString("phone", "phone doesn't exist");
-                    String ruc = preferences.getString("ruc", "phone doesn't exist");
                     txtSalida.setText(phoneNumber);
-                    saveClientPhone(phoneNumber, myPhone, ruc);
+                    if (TelephonyManager.CALL_STATE_RINGING == state) {
+                        if(callCheck == 0){
+                            callCheck = 2;
+                            String checkNumber = phoneNumber.substring(0,2);
+                            if (checkNumber.equals("01")){
+                                String newPhone = phoneNumber.substring(2);
+                                saveClientPhone(newPhone, myPhone, ruc);
+                            }else{
+                                saveClientPhone(phoneNumber, myPhone, ruc);
+                            }
+                        }
+                    }else if(TelephonyManager.CALL_STATE_OFFHOOK == state || TelephonyManager.CALL_STATE_IDLE == state) {
+                        if(callCheck >= 1) {
+                            callCheck = 0;
+                        }
+                    }
                 }
             }
         }, PhoneStateListener.LISTEN_CALL_STATE);*/
 
-        verifyPermissions();
+    }
 
-        intent = new Intent(this, SegundoPlano.class);
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(checkService == 0){
+            checkService = 1;
 
-        startService(new Intent(intent));
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
@@ -97,21 +130,7 @@ public class MainActivity extends AppCompatActivity {
         if(ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[0]) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[1]) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[2]) == PackageManager.PERMISSION_GRANTED) {
-
-            startService(new Intent(this, SegundoPlano.class));
-
-//            TelephonyManager telephony = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
-//            telephony.listen(new PhoneStateListener() {
-//                @Override
-//                public void onCallStateChanged(int state, String phoneNumber) {
-//                    if (TelephonyManager.CALL_STATE_RINGING == state) {
-//                        String myPhone = preferences.getString("phone", "phone doesn't exist");
-//                        String ruc = preferences.getString("ruc", "phone doesn't exist");
-//                        txtSalida.setText(phoneNumber);
-//                        saveClientPhone(phoneNumber, myPhone, ruc);
-//                    }
-//                }
-//            }, PhoneStateListener.LISTEN_CALL_STATE);
+            Toast.makeText(this, "NO ACEPTADO", Toast.LENGTH_SHORT).show();
         }else{
             ActivityCompat.requestPermissions(MainActivity.this,
                     permissions,
@@ -146,6 +165,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if(which == 1) {
+                    checkService = 1;
                     final ProgressDialog progress = new ProgressDialog(MainActivity.this);
                     progress.setTitle("Saliendo");
                     progress.setMessage("Espere un momento...");
@@ -164,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void saveClientPhone(String phoneClient, String myPhone, String ruc) {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="https://nikkeihuaral.com/delivery_celular/save_phone.php?mi_celular="+myPhone+"&cliente_celular="+phoneClient+"&ruc="+ruc;
+        String url ="https://nikkeihuaral.com/delivery_celular/save_phone.php?mi_celular="+myPhone+"&cliente_celular="+phoneClient+"&ruc="+ruc+"&fecha_hora=";
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
