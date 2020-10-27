@@ -32,6 +32,10 @@ import java.util.Date;
 
 public class SegundoPlano extends Service {
     int callCheck = 0;
+    int checkInsert = 0;
+    String url = "";
+    String myPhone = "";
+    String ruc = "";
 
     @Override
     public void onCreate() {
@@ -56,35 +60,38 @@ public class SegundoPlano extends Service {
                 .build();
 
         SharedPreferences preferences = getSharedPreferences("login", MODE_PRIVATE);
-        final String myPhone = preferences.getString("phone", "phone doesn't exist");
-        final String ruc = preferences.getString("ruc", "phone doesn't exist");
+        myPhone = preferences.getString("phone", "phone doesn't exist");
+        ruc = preferences.getString("ruc", "phone doesn't exist");
 
         TelephonyManager telephony = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
 
-            assert telephony != null;
-            telephony.listen(new PhoneStateListener() {
-                @Override
-                public void onCallStateChanged(int state, String phoneNumber) {
-                    if (TelephonyManager.CALL_STATE_RINGING == state) {
-                        if(callCheck == 0){
-                            callCheck++;
-                             String checkNumber = phoneNumber.substring(0,2);
-                            if (checkNumber.equals("01")){
-                                String newPhone = phoneNumber.substring(2);
-                                saveClientPhone(newPhone, myPhone, ruc);
-                            }else{
-                                saveClientPhone(phoneNumber, myPhone, ruc);
-                            }
+        assert telephony != null;
+        telephony.listen(new PhoneStateListener() {
+            @Override
+            public void onCallStateChanged(int state, String phoneNumber) {
+                if (TelephonyManager.CALL_STATE_RINGING == state) {
+                    System.out.println("RINGINGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
+                    if(callCheck == 0){
+                        callCheck++;
+                        String checkNumber = phoneNumber.substring(0,2);
+                        if (checkNumber.equals("01")){
+                            String newPhone = phoneNumber.substring(2);
+                            saveClientPhone(newPhone, myPhone, ruc);
+                        }else{
+                            saveClientPhone(phoneNumber, myPhone, ruc);
                         }
-                    }else if(TelephonyManager.CALL_STATE_OFFHOOK == state || TelephonyManager.CALL_STATE_IDLE == state) {
-                        if(callCheck >= 1) {
-                            callCheck--;
-                        }
+                        checkInsert = 0;
+
+                    }
+                }else if(TelephonyManager.CALL_STATE_OFFHOOK == state || TelephonyManager.CALL_STATE_IDLE == state) {
+                    if(callCheck >= 1) {
+                        callCheck--;
                     }
                 }
-            }, PhoneStateListener.LISTEN_CALL_STATE);
+            }
+        }, PhoneStateListener.LISTEN_CALL_STATE);
 
-             startForeground(10, notification);
+        startForeground(10, notification);
 
         return START_NOT_STICKY;
     }
@@ -101,22 +108,26 @@ public class SegundoPlano extends Service {
     }
 
     private void saveClientPhone(String phoneClient, String myPhone, String ruc) {
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String currentDate = getCurrentDate();
-        String url ="https://nikkeihuaral.com/delivery_celular/save_phone.php?mi_celular="+myPhone+"&cliente_celular="+phoneClient+"&ruc="+ruc+"&fecha_hora="+currentDate;
+        if(checkInsert == 0) {
+            checkInsert = 1;
+            RequestQueue queue = Volley.newRequestQueue(this);
+            String currentDate = getCurrentDate();
+            url ="https://nikkeihuaral.com/delivery_celular/save_phone.php?mi_celular="+myPhone+"&cliente_celular="+phoneClient+"&ruc="+ruc+"&fecha_hora="+currentDate;
 
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                System.out.print("DATA: " +error);
-            }
-        });
-        queue.add(stringRequest);
+            StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    System.out.print("DATA: " +error);
+                }
+            });
+            queue.add(stringRequest);
+        }
+
     }
 
     private String getCurrentDate() {

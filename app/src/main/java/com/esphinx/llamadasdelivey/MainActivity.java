@@ -72,6 +72,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         verifyPermissions();
+
+        startService(new Intent(intent));
     }
 
 
@@ -80,57 +82,21 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(checkService == 1){
-            stopService(intent);
-            checkService = 0;
-        }
-
-        startService(new Intent(intent));
-
-     /*   TelephonyManager telephony = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
-        telephony.listen(new PhoneStateListener() {
-            @Override
-            public void onCallStateChanged(int state, String phoneNumber) {
-                if (TelephonyManager.CALL_STATE_RINGING == state) {
-                    txtSalida.setText(phoneNumber);
-                    if (TelephonyManager.CALL_STATE_RINGING == state) {
-                        if(callCheck == 0){
-                            callCheck = 2;
-                            String checkNumber = phoneNumber.substring(0,2);
-                            if (checkNumber.equals("01")){
-                                String newPhone = phoneNumber.substring(2);
-                                saveClientPhone(newPhone, myPhone, ruc);
-                            }else{
-                                saveClientPhone(phoneNumber, myPhone, ruc);
-                            }
-                        }
-                    }else if(TelephonyManager.CALL_STATE_OFFHOOK == state || TelephonyManager.CALL_STATE_IDLE == state) {
-                        if(callCheck >= 1) {
-                            callCheck = 0;
-                        }
-                    }
-                }
-            }
-        }, PhoneStateListener.LISTEN_CALL_STATE);*/
 
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if(checkService == 0){
-            checkService = 1;
-
-        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     private void verifyPermissions(){
-        @SuppressLint("InlinedApi") String[] permissions = {Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG, Manifest.permission.FOREGROUND_SERVICE};
+        @SuppressLint("InlinedApi") String[] permissions = {Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG, Manifest.permission.FOREGROUND_SERVICE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
         if(ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[0]) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[1]) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[2]) == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "NO ACEPTADO", Toast.LENGTH_SHORT).show();
+                && ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[2]) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this.getApplicationContext(), permissions[3]) == PackageManager.PERMISSION_GRANTED) {
         }else{
             ActivityCompat.requestPermissions(MainActivity.this,
                     permissions,
